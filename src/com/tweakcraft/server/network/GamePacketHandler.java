@@ -1,6 +1,7 @@
 package com.tweakcraft.server.network;
 
 import com.tweakcraft.server.ThreadPoolManager;
+import com.tweakcraft.server.network.receivablePacket.Chat;
 import java.nio.ByteBuffer;
 
 import org.mmocore.network.IClientFactory;
@@ -25,8 +26,8 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	int opcode = buf.get() & 0xFF;
 
 	switch (opcode) {
-	    case 0x00:
-		//packet = new packet();
+	    case 0x03:
+		packet = new Chat();
 		break;
 	}
 
@@ -38,8 +39,7 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	return new GameClient(con);
     }
 
-    @Override
-    public void execute(ReceivablePacket<GameClient> packet) {
-	ThreadPoolManager.getInstance().execute(packet);
+    public void execute(ReceivablePacket<GameClient> rp) {
+	ThreadPoolManager.getInstance().execute(rp);
     }
 }
