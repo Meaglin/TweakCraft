@@ -1,6 +1,6 @@
 package com.tweakcraft.server.network;
 
-import com.tweakcraft.instance.Player;
+import com.tweakcraft.server.instance.Player;
 import java.nio.ByteBuffer;
 import org.mmocore.network.MMOClient;
 import org.mmocore.network.MMOConnection;
@@ -19,6 +19,10 @@ public class GameClient extends MMOClient<MMOConnection<GameClient>> {
 	_crypt = new GameCrypt();
     }
 
+    public void sendPacket(BaseSendablePacket pk){
+	getConnection().sendPacket(pk);
+    }
+    
     @Override
     public boolean decrypt(ByteBuffer buf, int size) {
 	_crypt.decrypt(buf.array(), buf.position(), size);
