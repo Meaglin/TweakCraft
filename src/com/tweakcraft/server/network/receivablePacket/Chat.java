@@ -19,7 +19,7 @@ public class Chat extends BaseReceivablePacket{
 
 
     protected void readImpl() {
-	_message = readS();
+	_message = readString(readShort());
     }
 
 

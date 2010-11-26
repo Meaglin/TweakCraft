@@ -5,6 +5,7 @@
 
 package com.tweakcraft.server.network;
 
+import java.util.logging.Logger;
 import org.mmocore.network.ReceivablePacket;
 
 /**
@@ -12,6 +13,8 @@ import org.mmocore.network.ReceivablePacket;
  * @author Meaglin
  */
 public abstract class BaseReceivablePacket extends ReceivablePacket<GameClient> {
+
+    protected static final Logger _log = Logger.getLogger(BaseReceivablePacket.class.getName());
 
     protected abstract void readImpl();
     public abstract void runImpl();
@@ -22,6 +25,7 @@ public abstract class BaseReceivablePacket extends ReceivablePacket<GameClient> 
 	    readImpl();
 	    return true;
 	} catch (Exception e) {
+	    e.printStackTrace();
 	}
 	return false;
     }

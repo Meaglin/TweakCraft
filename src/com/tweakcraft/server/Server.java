@@ -4,6 +4,8 @@ import com.tweakcraft.server.network.GameClient;
 import com.tweakcraft.server.network.GamePacketHandler;
 import com.tweakcraft.server.network.IPv4Filter;
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import org.mmocore.network.SelectorConfig;
 import org.mmocore.network.SelectorThread;
 
@@ -22,7 +24,13 @@ public class Server {
 
     public Server(final String[] args) throws IOException {
 
-	final SelectorConfig sc = new SelectorConfig();
+	/*ServerSocket sock = new ServerSocket(25565);
+	Socket cl = sock.accept();
+	while(true){
+	    System.out.println(cl.getInputStream().read());
+	}*
+	 */
+	 final SelectorConfig sc = new SelectorConfig();
 	sc.MAX_READ_PER_PASS = 12;
 	sc.MAX_SEND_PER_PASS = 12;
 	sc.SLEEP_TIME = 20;
@@ -38,6 +46,7 @@ public class Server {
 	    System.exit(1);
 	}
 	_selectorThread.start();
-	System.out.println("Listening for players on port 1111.");
+	System.out.println("Listening for players on port "+Config.PORT+".");
+	 
     }
 }

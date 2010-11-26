@@ -39,11 +39,13 @@ public class GameClient extends MMOClient<MMOConnection<GameClient>> {
     @Override
     protected void onDisconnection() {
 	// TODO
+	System.out.println("dc");
     }
 
     @Override
     protected void onForcedDisconnection() {
 	// TODO
+	System.out.println("dcd");
     }
 
     public Player getPlayer() {

@@ -19,8 +19,8 @@ public class Chat extends BaseSendablePacket {
     }
     @Override
     protected void writeImpl() {
-	writeC(0x03);
-	writeS(_message);
+	writeByte(0x03);
+	writeString(_message);
     }
 
 }
