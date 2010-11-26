@@ -38,6 +38,6 @@ public class Server {
 	    System.exit(1);
 	}
 	_selectorThread.start();
-	System.out.println("Listening for players on port 1111.");
+	System.out.println("Listening for players on port" + Config.PORT + ".");
     }
 }

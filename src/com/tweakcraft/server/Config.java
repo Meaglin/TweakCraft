@@ -6,5 +6,5 @@ package com.tweakcraft.server;
  */
 public class Config {
 
-    public static int PORT = 1337;
+    public static int PORT = 25565;
 }
