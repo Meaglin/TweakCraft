@@ -65,18 +65,53 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 
 	_log.info(packetId + "");
 
-	switch(packetId){
+	switch (packetId) {
+	    // Ping
+	    case 0x00:
+		return 0;
+	    // RequestLogin
 	    case 0x01:
-		int userlen = getShort(buf.get(5),buf.get(6));
-		int passlen = getShort(buf.get(7 + userlen),buf.get(8 + userlen));
+		int userlen = getShort(buf.get(5), buf.get(6));
+		int passlen = getShort(buf.get(7 + userlen), buf.get(8 + userlen));
 		return 6 + userlen + 2 + passlen + 10;
-		//_log.info(userlen + " " + buf.get(5) + " " + buf.get(6));
-		//_log.info(passlen + " " + buf.get(7 + userlen) + " " + buf.get(8 + userlen));
+	    // HandShake
 	    case 0x02:
-		return 3 + getShort(buf.get(),buf.get());
+		return 3 + getShort(buf.get(), buf.get());
+	    // Chat
+	    case 0x03:
+		return getShort(buf.get(), buf.get());
+	    case 0x04:
+		return 1 + 8;
+	    case 0x05:
+		int type = buf.getInt();
+		int size = 0;
+		switch(type){
+		    case -1:
+			for(int i = 0;i < 36;i++){
+			    if(buf.getShort() == -1)
+				size += 2;
+			    else{
+				size += 5;
+				buf.get();buf.getShort();
+			    }
+			}
+			break;
+		    case -2:
+		    case -3:
+			for(int i = 0;i < 4;i++){
+			    if(buf.getShort() == -1)
+				size += 2;
+			    else{
+				size += 5;
+				buf.get();buf.getShort();
+			    }
+			}
+			break;
+		}
+		return 7 + size;
 	    default:
-		    return 0;
-		
+		return 0;
+
 	}
     }
     private static int getShort(byte b1,byte b2){

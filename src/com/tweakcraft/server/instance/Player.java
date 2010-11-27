@@ -14,11 +14,19 @@ public class Player extends Character{
     public Player(GameClient client){
 	_client = client;
     }
+
     public void onLoginRequest(int protocol, String username, String password, Long mapSeed, byte dimension){
 	sendPacket(new ErrorMessage("Not supported yet."));
     }
+    // not implemented yet.
     public void onLogin(){
 
+    }
+    public void onHandShake(String message){
+	sendPacket(new SendHandshake());
+    }
+    public void onDisconnect(){
+	
     }
     public GameClient getClient(){
 	return _client;
