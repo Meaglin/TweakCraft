@@ -40,6 +40,16 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	    case 0x03:
 		packet = new Chat();
 		break;
+	    case 0x05:
+		packet = new RequestInventoryUpdate();
+		break;
+	    case 0x07:
+		packet = new RequestUseEntity();
+		break;
+	    case 0x09:
+		packet = new RequestRespawn();
+		break;
+
 	    default:
 		System.out.println("Unknown packet with opcode : " + opcode);
 		break;
@@ -110,6 +120,12 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 			break;
 		}
 		return 7 + size;
+	    // Request Use Entity ?
+	    case 0x07:
+		return 10;
+	    // Request Respawn.
+	    case 0x09:
+		return 2;
 	    default:
 		return 0;
 
