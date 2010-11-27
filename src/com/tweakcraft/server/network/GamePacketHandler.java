@@ -83,6 +83,7 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	    case 0x01:
 		int userlen = getShort(buf.get(5), buf.get(6));
 		int passlen = getShort(buf.get(7 + userlen), buf.get(8 + userlen));
+                
 		return 6 + userlen + 2 + passlen + 10;
 	    // HandShake
 	    case 0x02:
