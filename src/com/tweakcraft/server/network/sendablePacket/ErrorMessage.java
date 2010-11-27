@@ -6,16 +6,16 @@ import com.tweakcraft.server.network.BaseSendablePacket;
  *
  * @author Meaglin
  */
-public class Chat extends BaseSendablePacket {
+public class ErrorMessage extends BaseSendablePacket{
 
-    private String _message;
-    public Chat(String message){
-	_message = message;
+    private String _error;
+    public ErrorMessage(String message){
+	_error = message;
     }
     @Override
     protected void writeImpl() {
-	writeByte(0x03);
-	writeString(_message);
+	writeByte(0xFF);
+	writeString(_error);
     }
 
 }

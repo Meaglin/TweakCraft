@@ -6,20 +6,17 @@ import com.tweakcraft.server.network.BaseReceivablePacket;
  *
  * @author Meaglin
  */
-public class Chat extends BaseReceivablePacket{
+public class RequestRespawn extends BaseReceivablePacket{
 
-    private String _message;
-
-
-
-
+    @Override
     protected void readImpl() {
-	_message = readString(readShort());
+	// always == 0, pointless to store it.
+	readByte();
     }
 
-
+    @Override
     public void runImpl() {
-	System.out.println("We received a chat: " + _message);
+	// TODO: Implement.
     }
 
 }

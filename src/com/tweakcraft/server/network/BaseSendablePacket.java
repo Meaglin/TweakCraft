@@ -5,6 +5,7 @@
 
 package com.tweakcraft.server.network;
 
+import java.util.logging.Logger;
 import org.mmocore.network.SendablePacket;
 
 /**
@@ -13,11 +14,14 @@ import org.mmocore.network.SendablePacket;
  */
 public abstract class BaseSendablePacket extends SendablePacket<GameClient> {
 
+    protected static final Logger _log = Logger.getLogger(BaseSendablePacket.class.getName());
+
     @Override
     protected void write() {
 	try {
 	    writeImpl();
 	} catch (Exception e) {
+	    e.printStackTrace();
 	}
     }
     protected abstract void writeImpl();
