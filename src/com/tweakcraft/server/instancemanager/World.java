@@ -5,7 +5,7 @@ import javolution.util.FastMap;
 
 /**
  *
- * @author Joseph Verburg
+ * @author Meaglin
  */
 public class World {
 

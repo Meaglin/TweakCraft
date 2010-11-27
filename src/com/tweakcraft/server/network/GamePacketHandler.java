@@ -80,32 +80,33 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	    // Chat
 	    case 0x03:
 		return getShort(buf.get(), buf.get());
-	    case 0x04:
-		return 1 + 8;
+	    // Inventory
 	    case 0x05:
 		int type = buf.getInt();
 		int size = 0;
-		switch(type){
+		switch (type) {
 		    case -1:
-			for(int i = 0;i < 36;i++){
-			    if(buf.getShort() == -1)
+			for (int i = 0; i < 36; i++)
+			    if (buf.getShort() == -1)
 				size += 2;
-			    else{
+			    else {
 				size += 5;
-				buf.get();buf.getShort();
+				// move the buffer ahead.
+				buf.get();
+				buf.getShort();
 			    }
-			}
 			break;
 		    case -2:
 		    case -3:
-			for(int i = 0;i < 4;i++){
-			    if(buf.getShort() == -1)
+			for (int i = 0; i < 4; i++)
+			    if (buf.getShort() == -1)
 				size += 2;
-			    else{
+			    else {
 				size += 5;
-				buf.get();buf.getShort();
+				// move the buffer ahead.
+				buf.get();
+				buf.getShort();
 			    }
-			}
 			break;
 		}
 		return 7 + size;

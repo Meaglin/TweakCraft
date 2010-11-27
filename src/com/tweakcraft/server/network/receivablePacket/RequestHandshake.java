@@ -1,17 +1,11 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.tweakcraft.server.network.receivablePacket;
 
 import com.tweakcraft.server.instance.Player;
 import com.tweakcraft.server.network.BaseReceivablePacket;
-import com.tweakcraft.server.network.sendablePacket.SendHandshake;
 
 /**
  *
- * @author SjoerdHuininga
+ * @author Meaglin
  */
 public class RequestHandshake extends BaseReceivablePacket{
 
