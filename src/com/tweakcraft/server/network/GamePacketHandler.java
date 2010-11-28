@@ -18,7 +18,7 @@ import org.mmocore.network.ReceivablePacket;
 public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFactory<GameClient>, IMMOExecutor<GameClient> {
 
     private static Logger _log = Logger.getLogger(GamePacketHandler.class.getName());
-    @Override
+
     public ReceivablePacket<GameClient> handlePacket(ByteBuffer buf,
 	    GameClient client) {
 
@@ -58,7 +58,7 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	return packet;
     }
 
-    @Override
+
     public GameClient create(MMOConnection<GameClient> con) {
 	return new GameClient(con);
     }
@@ -132,6 +132,7 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 
 	}
     }
+
     private static int getShort(byte b1,byte b2){
 	return (((b1 & 0xFF ) << 8) | (b2 & 0xFF));
     }

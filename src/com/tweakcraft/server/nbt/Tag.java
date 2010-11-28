@@ -27,6 +27,8 @@ import java.util.zip.GZIPOutputStream;
 /**
  * NBT IO class
  *
+ * @author GuntherDW
+ *
  * @see <a href="http://www.minecraft.net/docs/NBT.txt">Online NBT specification</a>
  */
 public class Tag {
