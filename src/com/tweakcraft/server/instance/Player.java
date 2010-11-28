@@ -17,8 +17,10 @@ public class Player extends Character{
 
     private GameClient _client;
     public Player(GameClient client){
-	_client = client;
+	    _client = client;
     }
+
+
 
     public void onLoginRequest(int protocol, String username, String password, Long mapSeed, byte dimension){
 	System.out.println("Login req prot"+protocol+"u:"+username+" p "+password+" mS "+mapSeed );

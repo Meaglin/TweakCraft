@@ -7,6 +7,8 @@ package com.tweakcraft.server.nbt;
  * Time: 23:53
  * To change this template use File | Settings | File Templates.
  */
+import com.tweakcraft.server.model.Item;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 // Not used
@@ -16,6 +18,9 @@ import java.io.FileOutputStream; */
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -475,6 +480,24 @@ public class Tag {
 			System.out.println(": " + t.getValue());
 		}
 	}
+
+    public List<Item> getTree(Tag t) {
+        ArrayList<Item> tagMap = null;
+
+
+
+        Tag[] subtags = (Tag[]) t.getValue();
+		for (Tag st : subtags) {
+            Item it = new Item();
+            String name = st.getName();
+            Tag[] subsubtags = (Tag[]) st.getValue();
+            for (Tag sst : subsubtags) {
+                it.setThing(sst.getName(), sst.getType(), sst.getValue());
+            }
+            tagMap.add(it);
+		}
+        return tagMap;
+    }
 
 	// For testing purposes.
 	/* public static void main(String[] args) {

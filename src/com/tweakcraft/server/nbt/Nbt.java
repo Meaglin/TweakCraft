@@ -1,5 +1,6 @@
 package com.tweakcraft.server.nbt;
 
+import com.tweakcraft.server.instance.Player;
 import sun.beans.editors.IntEditor;
 
 import java.io.File;
@@ -15,21 +16,27 @@ import java.io.InputStream;
  * To change this template use File | Settings | File Templates.
  */
 public class Nbt {
-    public Tag getPlayerData(String name)
+    public Player getPlayerData(String name)
     {
         Tag playerData = null;
+        Player _player = null;
+        Tag invData = null;
+
         if(name.trim().length() != 0)
         {
 
             try {
                 playerData = Tag.readFrom(new FileInputStream("players/" + name + ".dat"));
+                invData = playerData.findTagByName("Inventory");
+                //invData.
+
             }
             catch (IOException e) {
                 e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
             }
 
         }
-        return playerData;
+        return _player;
     }
 
     public Tag getChunk(Integer x,Integer y, boolean Nether)
