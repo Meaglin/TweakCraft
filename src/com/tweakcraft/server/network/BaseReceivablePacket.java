@@ -34,7 +34,7 @@ public abstract class BaseReceivablePacket extends ReceivablePacket<GameClient> 
     public void run() {
 	try {
 	    runImpl();
-	} catch (Throwable t) {}
+	} catch (Throwable t) {t.printStackTrace();}
     }
 
 }

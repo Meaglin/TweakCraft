@@ -18,7 +18,9 @@ public class RequestHandshake extends BaseReceivablePacket{
 
 
     public void runImpl() {
+	
 	getClient().setPlayer(new Player(getClient()));
+	//new Player(getClient());
 	getClient().getPlayer().onHandShake(_message);
     }
 

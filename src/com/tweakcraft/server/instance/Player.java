@@ -1,6 +1,8 @@
 package com.tweakcraft.server.instance;
 
 import com.tweakcraft.server.Config;
+import com.tweakcraft.server.instancemanager.World;
+import com.tweakcraft.server.model.Inventory;
 import com.tweakcraft.server.network.BaseSendablePacket;
 import com.tweakcraft.server.network.GameClient;
 import com.tweakcraft.server.network.sendablePacket.*;
@@ -9,26 +11,61 @@ import java.io.InputStreamReader;
 
 import java.net.URL;
 import java.net.URLConnection;
+
 /**
  * Player class.
  * @author Meaglin
  */
-public class Player extends Character{
+public class Player extends Character {
 
     private GameClient _client;
-    public Player(GameClient client){
-	    _client = client;
+    private Inventory _craftTable, _armor, _inventory;
+
+    public Player(GameClient client) {
+	//TODO: implement proper id.
+	super(1);
+	setX(3);
+	setY(9);
+	setZ(128);
+	setStance(getZ()+1.5);
+	_client = client;
+	_craftTable = new Inventory(4);
+	_armor = new Inventory(4);
+	_inventory = new Inventory(36);
     }
 
+    public Inventory getInventory() {
+	return _inventory;
+    }
 
+    public Inventory getCraftTable() {
+	return _craftTable;
+    }
 
-    public void onLoginRequest(int protocol, String username, String password, Long mapSeed, byte dimension){
-	System.out.println("Login req prot"+protocol+"u:"+username+" p "+password+" mS "+mapSeed );
+    public Inventory getArmor() {
+	return _armor;
+    }
 
-	if(!Config.OFFLINE_MODE && !validUser(username))
+    public void updateInventory() {
+	sendPacket(new SendInventory(-1, getInventory()));
+    }
+
+    public void updateArmor() {
+	sendPacket(new SendInventory(-2, getArmor()));
+    }
+
+    public void updateCraftTable() {
+	sendPacket(new SendInventory(-3, getCraftTable()));
+    }
+
+    public synchronized void onLoginRequest(int protocol, String username, String password, Long mapSeed, byte dimension) {
+	System.out.println("Login req prot " + protocol + " u:" + username + " p:" + password + " mS:" + mapSeed);
+
+	//sendPacket(new ErrorMessage("Failed to login: User not premium 2"));
+	if (!Config.OFFLINE_MODE && !validUser(username))
 	    sendPacket(new ErrorMessage("Failed to login: User not premium"));
 	else
-	    sendPacket(new ErrorMessage("Not supported yet."));
+	    onLogin();
     }
 
     private boolean validUser(String username) {
@@ -38,7 +75,7 @@ public class Player extends Character{
 	String serverResponse = "";
 	BufferedReader rd = null;
 	InputStreamReader str = null;
-	try{
+	try {
 	    URL url = new URL(urlStr);
 	    URLConnection conn = url.openConnection();
 
@@ -47,13 +84,16 @@ public class Player extends Character{
 
 	    // Get the response
 	    serverResponse = rd.readLine();
-	}catch(Exception e){
+	} catch (Exception e) {
 	    e.printStackTrace();
-	}finally {
-	    try{
-		if(str != null)str.close();
-		if(rd != null) rd.close();
-	    }catch(Exception e){}
+	} finally {
+	    try {
+		if (str != null)
+		    str.close();
+		if (rd != null)
+		    rd.close();
+	    } catch (Exception e) {
+	    }
 	}
 	if (serverResponse.equals("YES"))
 	    return true;
@@ -61,24 +101,38 @@ public class Player extends Character{
 	    return false;
     }
 
-    // not implemented yet.
-    public void onLogin() {
+    // this is called when a player wants to login and passed the default validation.
+    private void onLogin() {
+	sendPacket(new AcceptLogin(getId(), (long) 0, (byte) 0));
+	_log.info("sending chunks.");
+//	World.getInstance().getChunk((int) getX(), (int) getY()).registerPlayer(this);
+	World.getInstance().getChunk(1,1).registerPlayer(this);
+	World.getInstance().getChunk(-1,-1).registerPlayer(this);
+	World.getInstance().getChunk(-1,1).registerPlayer(this);
+	World.getInstance().getChunk(1,-1).registerPlayer(this);
+	_log.info("send spawn.");
+	sendPacket(new SendSpawnPosition((int) getX(), (int) getY(), (int) getZ()));
+	_log.info("send inventory.");
+	updateInventory();
+	updateCraftTable();
+	updateArmor();
+	_log.info("send location.");
+	sendPacket(new SendPositionAndLook(this));
     }
 
-    public void onHandShake(String message){
+    //message = username
+    public void onHandShake(String message) {
 	sendPacket(new SendHandshake());
     }
 
-    public void onDisconnect(){
-	
+    public void onDisconnect() {
     }
 
-    public GameClient getClient(){
+    public GameClient getClient() {
 	return _client;
     }
 
-
-    public void sendPacket(BaseSendablePacket packet){
+    public void sendPacket(BaseSendablePacket packet) {
 	getClient().sendPacket(packet);
     }
 }

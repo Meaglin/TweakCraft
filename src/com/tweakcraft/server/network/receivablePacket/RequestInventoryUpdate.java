@@ -17,12 +17,12 @@ public class RequestInventoryUpdate extends BaseReceivablePacket{
 	_count = readShort();
 	_items = new Item[(_type == -1 ? 36 : 4)];
 	for(int i = 0;i < (_type == -1 ? 36 : 4); i++){
-	    int type = readShort();
+	    short type = (short) readShort();
 	    if(type == -1)
 	    {
-		_items[i] = new Item(0,0);
+		_items[i] = new Item();
 	    }else{
-		_items[i] = new Item(type,readByte(),readShort());
+		_items[i] = new Item(type,(byte)readByte(),(short)readShort());
 	    }
 
 	}

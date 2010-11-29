@@ -49,7 +49,9 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	    case 0x09:
 		packet = new RequestRespawn();
 		break;
-
+	    case 0x0B:
+		packet = new RequestChangePosition();
+		break;
 	    default:
 		System.out.println("Unknown packet with opcode : " + opcode);
 		break;
@@ -73,7 +75,7 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 
 	int packetId = buf.get();
 
-	_log.info(packetId + "");
+	//_log.info(packetId + "");
 
 	switch (packetId) {
 	    // Ping
@@ -127,6 +129,16 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	    // Request Respawn.
 	    case 0x09:
 		return 2;
+
+	    //Player position
+	    case 0x0B:
+		return 34;
+	    //Player look
+	    case 0x0C:
+		return 10;
+	    //Player position+look
+	    case 0x0D:
+		return 42;
 	    default:
 		return 0;
 

@@ -1,6 +1,7 @@
 package com.tweakcraft.server.network.sendablePacket;
 
 import com.tweakcraft.server.network.BaseSendablePacket;
+import java.io.DataInputStream;
 
 /**
  *
