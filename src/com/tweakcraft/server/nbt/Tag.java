@@ -483,23 +483,6 @@ public class Tag {
 		}
 	}
 
-    public List<Item> getTree(Tag t) {
-        ArrayList<Item> tagMap = null;
-
-
-
-        Tag[] subtags = (Tag[]) t.getValue();
-		for (Tag st : subtags) {
-            Item it = new Item();
-            String name = st.getName();
-            Tag[] subsubtags = (Tag[]) st.getValue();
-            for (Tag sst : subsubtags) {
-                it.setThing(sst.getName(), sst.getType(), sst.getValue());
-            }
-            tagMap.add(it);
-		}
-        return tagMap;
-    }
 
 	// For testing purposes.
 	/* public static void main(String[] args) {

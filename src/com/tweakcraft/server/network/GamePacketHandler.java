@@ -31,6 +31,9 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	_log.info("receive packet " + opcode);
 
 	switch (opcode) {
+	    case 0x00:
+		packet = new Ping();
+		break;
 	    case 0x01:
 		packet = new RequestLogin();
 		break;
@@ -49,8 +52,17 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	    case 0x09:
 		packet = new RequestRespawn();
 		break;
+	    case 0x0A:
+		packet = new RequestChangeOnGround();
+		break;
 	    case 0x0B:
 		packet = new RequestChangePosition();
+		break;
+	    case 0x0C:
+		packet = new RequestChangeLook();
+		break;
+	    case 0x0D:
+		packet = new RequestChangePositionAndLook();
 		break;
 	    default:
 		System.out.println("Unknown packet with opcode : " + opcode);
@@ -129,7 +141,9 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	    // Request Respawn.
 	    case 0x09:
 		return 2;
-
+	    //Player on ground
+	    case 0x0A:
+		return 2;
 	    //Player position
 	    case 0x0B:
 		return 34;
@@ -139,6 +153,24 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	    //Player position+look
 	    case 0x0D:
 		return 42;
+	    //Player Digging / left clicking a block
+	    case 0x0E:
+		return 12;
+	    //Player Block Placement / right clicking a block.
+	    case 0x0F:
+		return 13;
+	    // Item Hold Change.
+	    case 0x10:
+		return 7;
+	    // Arm swing(left click into distance).
+	    case 0x12:
+		return 6;
+	    // Drop item.
+	    case 0x15:
+		return 23;
+	    //Disconnect.
+	    case 0xFF:
+		return 3 + getShort(buf.get(),buf.get());
 	    default:
 		return 0;
 

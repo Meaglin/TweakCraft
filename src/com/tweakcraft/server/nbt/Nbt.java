@@ -51,8 +51,8 @@ public class Nbt {
 //        cy = (int)Math.floor(y / 16);
 
 
-	System.out.println(y % 64 + " " + y);
-	System.out.println(x % 64 + " " + x);
+	//System.out.println(y % 64 + " " + y);
+	//System.out.println(x % 64 + " " + x);
 
 	bx = cx = x >> 4;
 	by = cy = y >> 4;
@@ -64,7 +64,7 @@ public class Nbt {
 	    by += 64;
 
 
-	System.out.println(cx % 64 + " " + cy % 64);
+	//System.out.println(cx % 64 + " " + cy % 64);
         try{
 
             chunk = Tag.readFrom(new FileInputStream(Config.WORLD_FOLDER + "/" + (Nether ? "DIM-1/" : "") + Integer.toString((bx % 64), 36) + "/"

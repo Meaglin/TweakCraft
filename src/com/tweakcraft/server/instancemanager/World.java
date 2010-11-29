@@ -19,8 +19,8 @@ public class World {
 
     public synchronized Chunk getChunk(int x,int y){
 	int chunkx = x >> 6, chunky = y >> 6;
-	long location = chunky << 32 + chunkx;
-
+	long location = ((((long)chunky) << 32) + chunkx);
+	System.out.println("request chunk x:" + x + " y:" + y + " chunkx:" + chunkx + " chunky:" + chunky + " location:" + location);
 	if(_chunks.containsKey(location))
 	    return _chunks.get(location);
 	else

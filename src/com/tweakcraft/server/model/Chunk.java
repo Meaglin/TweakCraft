@@ -23,17 +23,17 @@ public class Chunk {
     protected static final Logger _log = Logger.getLogger(Chunk.class.getName());
 
     public Chunk(int x,int y){
-	_log.info("loading chunk");
+	//_log.info("loading chunk");
 	//_blocks = new Block[64][64][128];
 	//_blocks = blocks;
     	_blocks = new FastMap<Integer, Block>().shared();
 	_players = new FastMap<Integer, Player>().shared();
 
-	_log.info("loading chunk 2");
+	//_log.info("loading chunk 2");
 	_x = (x >> 6) << 6;
 	_y = (y >> 6) << 6;
 	load();
-	_log.info("loaded chunk");
+	_log.info("loaded chunk x:" + _x + " y:" + _y);
     }
     private void load(){
 	int startx = _x >> 4,starty = _y >> 4;
@@ -44,7 +44,7 @@ public class Chunk {
 		for(int i = 0;i < 16;i++)
 		    for(int o = 0;o < 16;o++)
 			for(int p = 0;p < 128;p++)
-			    _blocks.put((i + 16 * (x - startx)) << 16 + (o + 16 * (y - starty)) << 8 + p, blocks[i][o][p]);
+			    _blocks.put((((i + 16 * (x - startx)) << 16) + ((o + 16 * (y - starty)) << 8) + p), blocks[i][o][p]);
 	    }
     }
     public int getX(){
@@ -79,7 +79,7 @@ public class Chunk {
 	byte[] blocksLight = (byte[]) level.findTagByName("BlockLight").getValue();
 	byte[] blocksSkyLight = (byte[]) level.findTagByName("SkyLight").getValue();
 
-	int curx = 15, cury = 15, curz = 0;
+	int curx = 0, cury = 0, curz = 0;
 	byte blockType, blockData, blockLight, blockSkyLight;
 	for (int i = 0; i < 32768; i++) {
 
@@ -96,18 +96,18 @@ public class Chunk {
 		blockSkyLight = (byte) ((blocksSkyLight[(int) Math.floor(i / 2)] & 0x0F));
 	    }
 	    blockType = (byte) (blocks[i] & 0xFF);
-	    //if(blockType != 7 && blockType != 87 && blockType != 0)
-		//System.out.println(i + "= x:" + curx + " y:" + cury + " z:" + curz + " t:" + blockType);
-	    rt[curx][cury][curz] = new Block(curx + x << 4, cury + y << 4, curz, blockType, blockData, blockLight, blockSkyLight);
+//	    if(blockType != 7 && blockType != 87 && blockType != 0)
+//		System.out.println(i + "= x:" + curx + " y:" + cury + " z:" + curz + " t:" + blockType + " d:" + blockData + " l:" + blockLight + " sl:" + blockSkyLight);
+	    rt[curx][cury][curz] = new Block((curx + (x << 4)), (cury + (y << 4)), curz, blockType, blockData, blockLight, blockSkyLight);
 
-	    if (curx == 0 && curz == 127) {
-		curx = 15;
-		cury--;
+	    if (cury == 15 && curz == 127) {
+		curx++;
+		cury = 0;
 		curz = 0;
 	    }
 	    else if (curz == 127) {
+		cury++;
 		curz = 0;
-		curx--;
 	    }
 	    else
 		curz++;
@@ -116,7 +116,11 @@ public class Chunk {
 	return rt;
     }
     public synchronized void registerPlayer(Player player){
-	_log.info("register player");
+	if(_players.containsKey(player.getId())){
+	    _log.info("Player already in this chunk ! x:" + _x + " y:" + _y);
+	    return;
+	}
+	else _log.info("register player");
 	_players.put(player.getId(), player);
 
 	int startx = _x >> 4,starty = _y >> 4;
@@ -125,37 +129,41 @@ public class Chunk {
 	for(int chunkx = startx;chunkx < startx+4;chunkx++)
 	    for(int chunky = starty;chunky < starty+4;chunky++){
 
+		player.sendPacket(new PreChunk(chunkx,chunky,true));
+
 		blocks = new byte[81920];
 		deflater = new Deflater(1);
 
 		int index = 0;
-		for(int y = 15;y >= 0; y-- )
-		    for(int x = 15;x >= 0; x--)
+		for(int x = 0;x < 16; x++)
+		    for(int y = 0;y < 16; y++ )
 			for(int z = 0;z < 128; z++ ){
+			    index = z + y * 128 + x * 128 * 16;
 			    //if(index > 32000)
 				//System.out.println(index + "= x:" + x + " y:" + y + " z:" + z);
-			    Block block  = _blocks.get((x + 16 * (chunkx-startx)) << 16 + (y + 16 * (chunky-starty)) << 8 + z);
+			    int id = (((x + 16 * (chunkx-startx)) << 16) + ((y + 16 * (chunky-starty)) << 8) + z);
+			    Block block  = _blocks.get(id);
 			    //System.out.println(index + "= x:" + i + " y:" + o + " z:" + p);
 			    blocks[index] = (byte)block.getType();
 //			    blocks[index] = 1;
 			    if (Math.floor(index / 2) == Math.round(index / 2)) {
-				blocks[(int)Math.floor(index/2) + 32678] |= (byte)block.getData() << 4;
-				blocks[(int)Math.floor(index/2) + 49152] |= (byte)block.getLight() << 4;
-				blocks[(int)Math.floor(index/2) + 65536] |= (byte)block.getSkyLight() << 4;
+				blocks[(int)Math.floor(index/2) + 32678] |= (byte)(block.getData() << 4);
+				blocks[(int)Math.floor(index/2) + 49152] |= (byte)(block.getLight() << 4);
+				blocks[(int)Math.floor(index/2) + 65536] |= (byte)(block.getSkyLight() << 4);
 			    }else{
 				blocks[(int)Math.floor(index/2) + 32678] |= (byte)block.getData();
 				blocks[(int)Math.floor(index/2) + 49152] |= (byte)block.getLight();
 				blocks[(int)Math.floor(index/2) + 65536] |= (byte)block.getSkyLight();
 			    }
-			    index++;
+			    //System.out.println(index + "["+(chunkx-startx)+"]["+(chunky-starty)+"]["+((x + 16 * (chunkx-startx)) << 16)+"]= x:" + x + " y:" + y + " z:" + z + " t:" + block.getType() + " d:" + block.getData() + " l:" + block.getLight() + " sl:" + block.getSkyLight());
 			}
+
 		deflater.setInput(blocks);
 		deflater.finish();
 		blocksO = new byte[81695];
-		player.sendPacket(new PreChunk(chunkx,chunky,true));
 		int size = deflater.deflate(blocksO);
-		player.sendPacket(new SendChunk(chunkx << 4,chunky << 4,0,15,15,127,size,blocksO));
-		System.out.println("sent chunk " + chunkx + " " + chunky + " " + size);
+		player.sendPacket(new SendChunk((chunkx << 4),(chunky << 4),0,15,15,127,size,blocksO));
+		//System.out.println("sent chunk " + chunkx + " " + chunky + " " + size);
 
 		deflater.end();
 	    }
