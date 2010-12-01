@@ -9,14 +9,14 @@ public class Block {
     private int _x, _y, _z;
     private byte _type, _data, _light, _skyLight;
 
-    public Block(int x, int y, int z, byte type, byte data, byte light, byte skylight) {
+    public Block(int x, int y, int z, int type, int data, int light, int skylight) {
 	_x = x;
 	_y = y;
 	_z = z;
-	_type = type;
-	_data = data;
-	_light = light;
-	_skyLight = skylight;
+	_type = (byte) type;
+	_data = (byte) data;
+	_light = (byte) light;
+	_skyLight = (byte) skylight;
     }
 
     public int getX() {
@@ -31,19 +31,19 @@ public class Block {
 	return _z;
     }
 
-    public synchronized int getType() {
+    public synchronized byte getType() {
 	return _type;
     }
 
-    public synchronized int getData() {
+    public synchronized byte getData() {
 	return _data;
     }
 
-    public synchronized int getLight() {
+    public synchronized byte getLight() {
 	return _light;
     }
 
-    public synchronized int getSkyLight() {
+    public synchronized byte getSkyLight() {
 	return _skyLight;
     }
 
