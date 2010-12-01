@@ -110,8 +110,8 @@ public class Player extends Character {
 	_log.info("sending chunks.");
 	Chunk c = World.getInstance().getChunk(this);
 	c.registerPlayer(this);
-	for(int i = c.getChunkX();i <= c.getChunkX();i++)
-	    for(int o = c.getChunkY();o <= c.getChunkY();o++){
+	for(int i = c.getChunkX()-3;i <= c.getChunkX()+3;i++)
+	    for(int o = c.getChunkY()-3;o <= c.getChunkY()+3;o++){
 		World.getInstance().getChunkByChunkLoc(i, o).registerPlayer(this);
 	    }
 	_log.info("send spawn.");
