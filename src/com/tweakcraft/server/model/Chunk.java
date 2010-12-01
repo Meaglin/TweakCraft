@@ -1,12 +1,20 @@
 package com.tweakcraft.server.model;
 
+import com.tweakcraft.server.ThreadPoolManager;
 import com.tweakcraft.server.instance.Player;
+import com.tweakcraft.server.instancemanager.World;
 import com.tweakcraft.server.nbt.Nbt;
 import com.tweakcraft.server.nbt.Tag;
 import com.tweakcraft.server.network.sendablePacket.PreChunk;
 import com.tweakcraft.server.network.sendablePacket.SendChunk;
+import com.tweakcraft.server.util.Rand;
+import java.util.Arrays;
+import java.util.concurrent.ScheduledFuture;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 import javolution.util.FastMap;
 
 /**
@@ -16,19 +24,28 @@ import javolution.util.FastMap;
 public class Chunk {
     //bottom left x,y of the chunk.
     private int _x, _y;
-    private byte[][][] _blocks;
+    private final byte[][][] _blocks;
+    private final boolean[][] _compressed;
+    private final int[][] _lastAction;
+    private final ScheduledFuture<?>[][] _cleanupTasks;
+
     private FastMap<Integer, Player> _players;
     private boolean _disabled = false;
     protected static final Logger _log = Logger.getLogger(Chunk.class.getName());
 
     public Chunk(int x, int y) {
+
 	_blocks = new byte[4][4][];
+	_compressed = new boolean[4][4];
+	_lastAction = new int[4][4];
+	_cleanupTasks = new ScheduledFuture<?>[4][4];
+
 	_players = new FastMap<Integer, Player>().shared();
 
 	_x = (x >> 6) << 6;
 	_y = (y >> 6) << 6;
 	load();
-	_log.info("loaded chunk x:" + _x + " y:" + _y);
+	//_log.info("loaded chunk x:" + _x + " y:" + _y);
     }
 
     private void load() {
@@ -41,7 +58,9 @@ public class Chunk {
 		    return;
 
 		_blocks[x-startx][y-starty] = blocks;
+		compressSubChunk(x-startx,y-starty);
 	    }
+	System.gc();
     }
 
     public int getX() {
@@ -60,7 +79,7 @@ public class Chunk {
 	return (_y >> 6);
     }
 
-    public synchronized Block getBlock(int x, int y, int z) {
+    public Block getBlock(int x, int y, int z) {
 	int indexx = x - getX(), indexy = y - getY();
 	if (z > 127 || z < 0 || indexx < 0 || indexx > 63 || indexy < 0 || indexy > 63)
 	    return null;
@@ -74,17 +93,24 @@ public class Chunk {
 	byte type,data,light,skyLight;
 	int chunkx = (x >> 4) - (_x << 2);
 	int chunky = (y >> 4) - (_y << 2);
-	type = _blocks[chunkx][chunky][index];
-	if(isEven(index)){
-	    data = (byte) ((_blocks[chunkx][chunky][index + 32768] & 0xF0) >> 4);
-	    light = (byte) ((_blocks[chunkx][chunky][index + 49152] & 0xF0) >> 4);
-	    skyLight = (byte) ((_blocks[chunkx][chunky][index + 65536] & 0xF0) >> 4);
-	}else{
-	    data = (byte) (_blocks[chunkx][chunky][index + 32768] & 0x0F);
-	    light = (byte) (_blocks[chunkx][chunky][index + 49152] & 0x0F);
-	    skyLight = (byte) (_blocks[chunkx][chunky][index + 65536] & 0x0F);
+	synchronized (_blocks){
+	    if(_compressed[chunkx][chunky])
+		deCompressSubChunk(chunkx,chunky);
+
+	    _lastAction[chunkx][chunky] = currentTimeInSeconds();
+	    
+	    type = _blocks[chunkx][chunky][index];
+	    if(isEven(index)){
+		data = (byte) ((_blocks[chunkx][chunky][index + 32768] & 0xF0) >> 4);
+		light = (byte) ((_blocks[chunkx][chunky][index + 49152] & 0xF0) >> 4);
+		skyLight = (byte) ((_blocks[chunkx][chunky][index + 65536] & 0xF0) >> 4);
+	    }else{
+		data = (byte) (_blocks[chunkx][chunky][index + 32768] & 0x0F);
+		light = (byte) (_blocks[chunkx][chunky][index + 49152] & 0x0F);
+		skyLight = (byte) (_blocks[chunkx][chunky][index + 65536] & 0x0F);
+	    }
+	    return new Block(x,y,z,type,data,light,skyLight);
 	}
-	return new Block(x,y,z,type,data,light,skyLight);
     }
 
     private byte[] getChunkBlocks(int x, int y) {
@@ -105,14 +131,11 @@ public class Chunk {
 
 	for (int i = 0; i < 32768; i++) {
 	    rt[i] = blocks[i];
-
-	    // even number
-	    if (isEven(i)) {
-		rt[32768 + floorAndDivideBy2(i)] = blocksData[floorAndDivideBy2(i)];
-		rt[49152 + floorAndDivideBy2(i)] = blocksLight[floorAndDivideBy2(i)];
-		rt[65536 + floorAndDivideBy2(i)] = blocksSkyLight[floorAndDivideBy2(i)];
+	    if(i < 16384){
+		rt[32768 + i] = blocksData[i];
+		rt[49152 + i] = blocksLight[i];
+		rt[65536 + i] = blocksSkyLight[i];
 	    } 
-
 	}
 	chunk = null;
 	level = null;
@@ -120,9 +143,61 @@ public class Chunk {
 	blocksData = null;
 	blocksLight = null;
 	blocksSkyLight = null;
-	return rt;
+	try{
+	    return rt;
+	} finally {
+	    rt = null;
+	}
     }
 
+    private synchronized void compressSubChunk(int x,int y){
+	if(x > 3 || y > 3 || x < 0 || y < 0)
+	    return;
+
+	//already compressed block.
+	if(_compressed[x][y])
+	    return;
+
+	_compressed[x][y] = true;
+
+	Deflater deflater = new Deflater(1);
+	deflater.setInput(_blocks[x][y]);
+	deflater.finish();
+	byte[] blocks = new byte[81695];
+	int size = deflater.deflate(blocks);
+	_blocks[x][y] = new byte[size];
+	_blocks[x][y] = Arrays.copyOf(blocks, size);
+	 //_log.info("Compressed ("+x+","+y+") size:"+size+".");
+	blocks = null;
+	deflater = null;
+	
+    }
+    private synchronized void deCompressSubChunk(int x,int y){
+	if(x > 3 || y > 3 || x < 0 || y < 0)
+	    return;
+
+	//already decompressed block.
+	if(!_compressed[x][y])
+	    return;
+
+	_compressed[x][y] = false;
+	byte[] blocks = new byte[81695];
+	Inflater inflater = new Inflater();
+	inflater.setInput(_blocks[x][y]);
+	try {
+	    inflater.inflate(blocks);
+	} catch (DataFormatException ex) {
+	    Logger.getLogger(Chunk.class.getName()).log(Level.SEVERE, null, ex);
+	} finally {
+	    inflater.end();
+	    _blocks[x][y] = blocks;
+	    if(_cleanupTasks[x][y] == null)
+		_cleanupTasks[x][y] = ThreadPoolManager.getInstance().schedule(new SubChunkCleanupTask(x,y), 200000L);
+	    blocks = null;
+	    inflater = null;
+	}
+	
+    }
     public synchronized void registerPlayer(Player player) {
 	if (_players.containsKey(player.getId()) || _disabled) {
 	    _log.info("Player already in this chunk ! x:" + _x + " y:" + _y);
@@ -132,26 +207,29 @@ public class Chunk {
 	_players.put(player.getId(), player);
 
 	int startx = _x >> 4, starty = _y >> 4;
-	byte[] blocks, blocksO;
+	byte[] blocksO;
 	Deflater deflater;
 	for (int chunkx = startx; chunkx < startx + 4; chunkx++)
 	    for (int chunky = starty; chunky < starty + 4; chunky++) {
 
 		player.sendPacket(new PreChunk(chunkx, chunky, true));
 
-		blocks = _blocks[chunkx-startx][chunky-starty];
-		deflater = new Deflater(1);
+		if(_compressed[chunkx-startx][chunky-starty]){
+		    player.sendPacket(new SendChunk((chunkx << 4), (chunky << 4), 0, 15, 15, 127, _blocks[chunkx-startx][chunky-starty].length, _blocks[chunkx-startx][chunky-starty]));
+		}else{
+		    deflater = new Deflater(1);
 
-		deflater.setInput(blocks);
-		deflater.finish();
-		blocksO = new byte[81695];
-		int size = deflater.deflate(blocksO);
-		player.sendPacket(new SendChunk((chunkx << 4), (chunky << 4), 0, 15, 15, 127, size, blocksO));
+		    deflater.setInput(_blocks[chunkx-startx][chunky-starty]);
+		    deflater.finish();
+		    blocksO = new byte[81695];
+		    int size = deflater.deflate(blocksO);
+		    player.sendPacket(new SendChunk((chunkx << 4), (chunky << 4), 0, 15, 15, 127, size, blocksO));
 
-		deflater.end();
+		    deflater.end();
+		}
 	    }
 	deflater = null;
-	blocks = null;
+	blocksO = null;
     }
 
     public synchronized void forget(Player player) {
@@ -161,17 +239,75 @@ public class Chunk {
 
 	int startx = _x << 2, starty = _y << 2;
 
-	for (int x = startx; x < startx + 4; x++)
-	    for (int y = starty; y < starty + 4; y++)
-		player.sendPacket(new PreChunk(x, y, false));
+	//don't try sending anymore packets if the player disconnected.
+	if(!player.getClient().getConnection().isClosed())
+	    for (int x = startx; x < startx + 4; x++)
+		for (int y = starty; y < starty + 4; y++)
+		    player.sendPacket(new PreChunk(x, y, false));
 
 	_players.remove(player.getId());
+	//no1 in or around the chunk anymore.
+	if(_players.isEmpty()){
+	    //_log.info("Schedule unload task.");
+	    //prevent too big io bursts by making this random.
+	    ThreadPoolManager.getInstance().schedule(new ChunkCleanupTask(), Rand.get(250,350) * 1000L);
+	}
     }
+
+    class ChunkCleanupTask implements Runnable{
+	public void run() {
+	    if(!_players.isEmpty()){
+		_log.info("players not empty ?");
+		return;
+		
+	    }
+
+	   for(int x = 0;x < 4;x++)
+		for(int y = 0;y < 4;y++)
+		    if(_lastAction[x][y] > currentTimeInSeconds()-200) {
+			_log.info("action not empty ?");
+			return;
+		    }
+
+
+	    for(int x = 0;x < 4;x++)
+		for(int y = 0;y < 4;y++){
+		    if(_lastAction[x][y] > 0)
+		    {
+			//save chunk.
+		    }
+		    if(_cleanupTasks[x][y] != null)
+			_cleanupTasks[x][y].cancel(false);
+		    
+		    _blocks[x][y] = null;
+		}
+
+	   _players.clear();
+	   World.getInstance().unloadChunk(_x,_y);
+	   _log.info("unloading chunk ("+_x+","+_y+").");
+	}
+    }
+    class SubChunkCleanupTask implements Runnable{
+	private final int _x,_y;
+	public SubChunkCleanupTask(int x,int y){
+	    _x = x;_y = y;
+	}
+	public void run() {
+	    if(_lastAction[_x][_y] < currentTimeInSeconds() - 60)
+		compressSubChunk(_x,_y);
+
+	    _cleanupTasks[_x][_y] = null;
+	}
+    }
+
     // why doesn't java have this ?
     private static boolean isEven(int var){
 	return ((var >> 1) << 1) == var;
     }
     private static int floorAndDivideBy2(int var){
 	return (var >> 1);
+    }
+    private static int currentTimeInSeconds(){
+	return floorAndDivideBy2((int) (System.currentTimeMillis() / 500));
     }
 }

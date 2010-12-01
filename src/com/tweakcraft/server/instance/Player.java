@@ -1,6 +1,7 @@
 package com.tweakcraft.server.instance;
 
 import com.tweakcraft.server.Config;
+import com.tweakcraft.server.ThreadPoolManager;
 import com.tweakcraft.server.idfactory.IdFactory;
 import com.tweakcraft.server.instancemanager.World;
 import com.tweakcraft.server.model.Chunk;
@@ -13,6 +14,7 @@ import java.io.InputStreamReader;
 
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * Player class.
@@ -22,6 +24,9 @@ public class Player extends Character {
 
     private GameClient _client;
     private Inventory _craftTable, _armor, _inventory;
+
+    private String _username;
+    private ScheduledFuture<?> _keepAlive;
 
     public Player(GameClient client) {
 	//TODO: implement proper id.
@@ -34,6 +39,12 @@ public class Player extends Character {
 	_craftTable = new Inventory(4);
 	_armor = new Inventory(4);
 	_inventory = new Inventory(36);
+	_keepAlive = ThreadPoolManager.getInstance().scheduleAtFixedRate(new Runnable(){
+
+	    public void run() {
+		sendPacket(new KeepAlive());
+	    }
+	}, 0, 60000);
     }
 
     public Inventory getInventory() {
@@ -63,6 +74,7 @@ public class Player extends Character {
     public synchronized void onLoginRequest(int protocol, String username, String password, Long mapSeed, byte dimension) {
 	System.out.println("Login req prot " + protocol + " u:" + username + " p:" + password + " mS:" + mapSeed);
 
+	_username = username;
 	//sendPacket(new ErrorMessage("Failed to login: User not premium 2"));
 	if (!Config.OFFLINE_MODE && !validUser(username))
 	    sendPacket(new ErrorMessage("Failed to login: User not premium"));
@@ -107,21 +119,18 @@ public class Player extends Character {
     private void onLogin() {
 	World.getInstance().registerPlayer(this);
 	sendPacket(new AcceptLogin(getId(), (long) 0, (byte) 0));
-	_log.info("sending chunks.");
 	Chunk c = World.getInstance().getChunk(this);
 	c.registerPlayer(this);
-	for(int i = c.getChunkX()-3;i <= c.getChunkX()+3;i++)
-	    for(int o = c.getChunkY()-3;o <= c.getChunkY()+3;o++){
+	for(int i = c.getChunkX()-1;i <= c.getChunkX()+1;i++)
+	    for(int o = c.getChunkY()-1;o <= c.getChunkY()+1;o++){
 		World.getInstance().getChunkByChunkLoc(i, o).registerPlayer(this);
 	    }
-	_log.info("send spawn.");
 	sendPacket(new SendSpawnPosition((int) getX(), (int) getY(), (int) getZ()));
-	_log.info("send inventory.");
 	updateInventory();
 	updateCraftTable();
 	updateArmor();
-	_log.info("send location.");
 	sendPacket(new SendPositionAndLook(this));
+	_log.info("Player Login.");
     }
 
     //message = username
@@ -129,7 +138,9 @@ public class Player extends Character {
 	sendPacket(new SendHandshake());
     }
 
-    public void onDisconnect() {
+    public void onDisconnect(boolean forced) {
+	_log.info("Player "+ getId() +" disconnected " + (forced ? "abnormally" : "") + "." );
+	_keepAlive.cancel(false);
 	World.getInstance().forgetPlayer(this);
     }
 
@@ -143,6 +154,6 @@ public class Player extends Character {
 
     public void onChat(String message) {
 	for(Player p : World.getInstance().getPlayers())
-	    p.sendPacket(new Chat(message));
+	    p.sendPacket(new Chat("<" + _username + "> " + message));
     }
 }

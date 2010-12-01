@@ -43,7 +43,8 @@ public class Server {
 	System.out.println("Listening for players on port "+Config.PORT+".");
 
 	IdFactory.getInstance();
-	World.getInstance().getChunkByChunkLoc(1, 1);
+	for(int i = 0;i < 4;i++)
+	    World.getInstance().getChunkByChunkLoc(i, 1);
 
     }
 }

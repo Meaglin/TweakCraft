@@ -3,6 +3,7 @@ package com.tweakcraft.server.instancemanager;
 import com.tweakcraft.server.instance.Player;
 import com.tweakcraft.server.model.Block;
 import com.tweakcraft.server.model.Chunk;
+import gnu.trove.TLongObjectHashMap;
 import java.util.Collection;
 import javolution.util.FastMap;
 
@@ -12,7 +13,7 @@ import javolution.util.FastMap;
  */
 public class World {
 
-    private final FastMap<Long, Chunk> _chunks = new FastMap<Long,Chunk>().shared();
+    private final TLongObjectHashMap<Chunk> _chunks = new TLongObjectHashMap<Chunk>();
     private final FastMap<Integer, Player> _players = new FastMap<Integer,Player>().shared();;
 
     private World() {
@@ -23,7 +24,7 @@ public class World {
 	synchronized(_chunks){
 	    int chunkx = x >> 6, chunky = y >> 6;
 	    long location = ((((long)chunky) << 32) + chunkx);
-	    System.out.println("request chunk x:" + x + " y:" + y + " chunkx:" + chunkx + " chunky:" + chunky + " location:" + location);
+	    //System.out.println("request chunk x:" + x + " y:" + y + " chunkx:" + chunkx + " chunky:" + chunky + " location:" + location);
 	    if(_chunks.containsKey(location))
 		return _chunks.get(location);
 	    else
@@ -45,8 +46,8 @@ public class World {
     }
     public void forgetPlayer(Player player){
 	synchronized(_chunks){
-	    for(Chunk c : _chunks.values())
-		c.forget(player);
+	    for(Object c : _chunks.getValues())
+		((Chunk)c).forget(player);
 	}
 	synchronized(_players){
 	    if(_players.containsKey(player.getId()))
@@ -71,6 +72,12 @@ public class World {
 	return getChunk((int)player.getX(),(int)player.getY());
     }
 
+    public void unloadChunk(int _x, int _y) {
+	long location = ((((long)_y) << 32) + _x);
+	synchronized(_chunks){
+	    _chunks.remove(location);
+	}
+    }
     private static class WorldHolder {
 	private static final World INSTANCE = new World();
     }

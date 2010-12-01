@@ -28,7 +28,7 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 
 	int opcode = buf.get()& 0xFF;
 
-	_log.info("receive packet " + opcode);
+//	System.out.println("receive packet " + opcode);
 
 	switch (opcode) {
 	    case 0x00:
@@ -87,7 +87,8 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 
 	int packetId = buf.get();
 
-	//_log.info(packetId + "");
+//	if(packetId != 0)
+//	    _log.info(packetId + " " + buf.remaining());
 
 	switch (packetId) {
 	    // Ping
@@ -104,7 +105,10 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 		return 3 + getShort(buf.get(), buf.get());
 	    // Chat
 	    case 0x03:
-		return getShort(buf.get(), buf.get());
+//		if(buf.remaining() < 3)
+//		    return 1;
+//		else
+		    return 3 + getShort(buf.get(1), buf.get(2));
 	    // Inventory
 	    case 0x05:
 		int type = buf.getInt();

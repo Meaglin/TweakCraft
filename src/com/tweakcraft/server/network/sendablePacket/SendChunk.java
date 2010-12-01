@@ -30,7 +30,6 @@ public class SendChunk extends BaseSendablePacket {
 	writeByte(_sizeY);
 	writeInt(_dataSize);
 	writeB(_data,0,_dataSize);
-	_data = null;
     }
 
 }

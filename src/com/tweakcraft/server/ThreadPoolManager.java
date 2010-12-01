@@ -49,8 +49,8 @@ public class ThreadPoolManager {
 	return _scheduledThreadPool.remove(r);
     }
 
-    public void scheduleAtFixedRate(Runnable r, int initialDelay, int delay) {
-	_scheduledThreadPool.scheduleAtFixedRate(r, initialDelay, delay, TimeUnit.MILLISECONDS);
+    public ScheduledFuture<?> scheduleAtFixedRate(Runnable r, int initialDelay, int delay) {
+	return _scheduledThreadPool.scheduleAtFixedRate(r, initialDelay, delay, TimeUnit.MILLISECONDS);
     }
 
     @SuppressWarnings("synthetic-access")
@@ -82,19 +82,5 @@ public class ThreadPoolManager {
 	    t.setPriority(_prio);
 	    return t;
 	}
-    }
-
-    public static int RandGet(int min, int max) {
-	if (max == min)
-	    return min;
-	if (max < min) {
-	    int t = min;
-	    min = max;
-	    max = t;
-	}
-	double rnd = Math.random();
-	int diff = max - min;
-	int Random = (int) Math.round(diff * rnd);
-	return Random + min;
     }
 }
