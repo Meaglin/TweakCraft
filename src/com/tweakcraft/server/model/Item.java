@@ -40,7 +40,7 @@ public class Item {
     }
     /* setThing(sst.getName(), sst.getType(), sst.getValue()); */
 
-    public void setThing(String naam, Tag.Type type, Object value) {
+    public void setAttribute(String naam, Tag.Type type, Object value) {
 	if (naam.trim().equalsIgnoreCase("id"))
 	    _type = (Short) value;
 	else if (naam.trim().equalsIgnoreCase("Damage"))
