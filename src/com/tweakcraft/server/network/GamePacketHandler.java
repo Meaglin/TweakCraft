@@ -41,7 +41,7 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 		packet = new RequestHandshake();
 		break;
 	    case 0x03:
-		packet = new Chat();
+		packet = new RequestChat();
 		break;
 	    case 0x05:
 		packet = new RequestInventoryUpdate();

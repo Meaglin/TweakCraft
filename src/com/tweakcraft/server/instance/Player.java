@@ -1,7 +1,9 @@
 package com.tweakcraft.server.instance;
 
 import com.tweakcraft.server.Config;
+import com.tweakcraft.server.idfactory.IdFactory;
 import com.tweakcraft.server.instancemanager.World;
+import com.tweakcraft.server.model.Chunk;
 import com.tweakcraft.server.model.Inventory;
 import com.tweakcraft.server.network.BaseSendablePacket;
 import com.tweakcraft.server.network.GameClient;
@@ -23,9 +25,9 @@ public class Player extends Character {
 
     public Player(GameClient client) {
 	//TODO: implement proper id.
-	super(1);
-	setX(3);
-	setY(9);
+	super(IdFactory.getInstance().getNextId());
+	setX(0);
+	setY(0);
 	setZ(128);
 	setStance(getZ()+1.5);
 	_client = client;
@@ -103,13 +105,15 @@ public class Player extends Character {
 
     // this is called when a player wants to login and passed the default validation.
     private void onLogin() {
+	World.getInstance().registerPlayer(this);
 	sendPacket(new AcceptLogin(getId(), (long) 0, (byte) 0));
 	_log.info("sending chunks.");
-//	World.getInstance().getChunk((int) getX(), (int) getY()).registerPlayer(this);
-	World.getInstance().getChunk(1,1).registerPlayer(this);
-	World.getInstance().getChunk(-1,-1).registerPlayer(this);
-	World.getInstance().getChunk(-1,1).registerPlayer(this);
-	World.getInstance().getChunk(1,-1).registerPlayer(this);
+	Chunk c = World.getInstance().getChunk(this);
+	c.registerPlayer(this);
+	for(int i = c.getChunkX();i <= c.getChunkX();i++)
+	    for(int o = c.getChunkY();o <= c.getChunkY();o++){
+		World.getInstance().getChunkByChunkLoc(i, o).registerPlayer(this);
+	    }
 	_log.info("send spawn.");
 	sendPacket(new SendSpawnPosition((int) getX(), (int) getY(), (int) getZ()));
 	_log.info("send inventory.");
@@ -126,6 +130,7 @@ public class Player extends Character {
     }
 
     public void onDisconnect() {
+	World.getInstance().forgetPlayer(this);
     }
 
     public GameClient getClient() {
@@ -134,5 +139,10 @@ public class Player extends Character {
 
     public void sendPacket(BaseSendablePacket packet) {
 	getClient().sendPacket(packet);
+    }
+
+    public void onChat(String message) {
+	for(Player p : World.getInstance().getPlayers())
+	    p.sendPacket(new Chat(message));
     }
 }

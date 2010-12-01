@@ -73,7 +73,8 @@ public class Nbt {
 		    + Integer.toString(cy, 36) + ".dat"));
         }
         catch (IOException e) {
-                e.printStackTrace();  
+            System.out.println("Chunk ("+cx+","+cy+") is missing.");
+	    // e.printStackTrace();
         }
         return chunk;
     }

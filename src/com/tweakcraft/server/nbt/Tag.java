@@ -1,26 +1,10 @@
 package com.tweakcraft.server.nbt;
 
-/**
- * Created by IntelliJ IDEA.
- * User: guntherdw
- * Date: 26/11/10
- * Time: 23:53
- * To change this template use File | Settings | File Templates.
- */
-import com.tweakcraft.server.model.Item;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-// Not used
-/* import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream; */
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -277,10 +261,15 @@ public class Tag {
 	public static Tag readFrom(InputStream is) throws IOException {
 		DataInputStream dis = new DataInputStream(new GZIPInputStream(is));
 		byte type = dis.readByte();
-		if (type == 0)
-			return new Tag(Type.TAG_End, null, null);
-		else
-			return new Tag(Type.values()[type], dis.readUTF(), readPayload(dis, type));
+		try{
+		    if (type == 0)
+			    return new Tag(Type.TAG_End, null, null);
+		    else
+			    return new Tag(Type.values()[type], dis.readUTF(), readPayload(dis, type));
+		}finally{
+		    dis.close();
+		}
+
 	}
 
 	private static Object readPayload(DataInputStream dis, byte type) throws IOException {

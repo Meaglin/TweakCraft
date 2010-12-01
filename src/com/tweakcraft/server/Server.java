@@ -1,5 +1,6 @@
 package com.tweakcraft.server;
 
+import com.tweakcraft.server.idfactory.IdFactory;
 import com.tweakcraft.server.instancemanager.World;
 import com.tweakcraft.server.network.GameClient;
 import com.tweakcraft.server.network.GamePacketHandler;
@@ -41,6 +42,8 @@ public class Server {
 	_selectorThread.start();
 	System.out.println("Listening for players on port "+Config.PORT+".");
 
-	World.getInstance().getChunk(-1, -1);
+	IdFactory.getInstance();
+	World.getInstance().getChunkByChunkLoc(1, 1);
+
     }
 }
