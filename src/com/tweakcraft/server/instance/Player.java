@@ -24,7 +24,6 @@ public class Player extends Character {
 
     private GameClient _client;
     private Inventory _craftTable, _armor, _inventory;
-
     private String _username;
     private ScheduledFuture<?> _keepAlive;
 
@@ -34,12 +33,12 @@ public class Player extends Character {
 	setX(0);
 	setY(0);
 	setZ(128);
-	setStance(getZ()+1.5);
+	setStance(getZ() + 1.5);
 	_client = client;
 	_craftTable = new Inventory(4);
 	_armor = new Inventory(4);
 	_inventory = new Inventory(36);
-	_keepAlive = ThreadPoolManager.getInstance().scheduleAtFixedRate(new Runnable(){
+	_keepAlive = ThreadPoolManager.getInstance().scheduleAtFixedRate(new Runnable() {
 
 	    public void run() {
 		sendPacket(new KeepAlive());
@@ -121,10 +120,11 @@ public class Player extends Character {
 	sendPacket(new AcceptLogin(getId(), (long) 0, (byte) 0));
 	Chunk c = World.getInstance().getChunk(this);
 	c.registerPlayer(this);
-	for(int i = c.getChunkX()-1;i <= c.getChunkX()+1;i++)
-	    for(int o = c.getChunkY()-1;o <= c.getChunkY()+1;o++){
+
+	for (int i = c.getChunkX() - 1; i <= c.getChunkX() + 1; i++)
+	    for (int o = c.getChunkY() - 1; o <= c.getChunkY() + 1; o++)
 		World.getInstance().getChunkByChunkLoc(i, o).registerPlayer(this);
-	    }
+
 	sendPacket(new SendSpawnPosition((int) getX(), (int) getY(), (int) getZ()));
 	updateInventory();
 	updateCraftTable();
@@ -139,7 +139,7 @@ public class Player extends Character {
     }
 
     public void onDisconnect(boolean forced) {
-	_log.info("Player "+ getId() +" disconnected " + (forced ? "abnormally" : "") + "." );
+	_log.info("Player " + getId() + " disconnected " + (forced ? "abnormally" : "") + ".");
 	_keepAlive.cancel(false);
 	World.getInstance().forgetPlayer(this);
     }
@@ -152,8 +152,66 @@ public class Player extends Character {
 	getClient().sendPacket(packet);
     }
 
+    /**
+     *
+     * @param type
+     * 0 = look change.
+     * 1 = position change.
+     * 2 = position & look change.
+     * @param x
+     * @param y
+     * @param z
+     * @param stance
+     * @param rotation
+     * @param pitch
+     */
+    public void onMove(int type,double x,double y,double z,double stance,float rotation,float pitch) {
+
+	switch (type) {
+	    case 0:
+		broadcastPacket(new SendEntityLook(getId(),getRotation(),getPitch(),rotation,pitch));
+		setRotation(rotation);
+		setPitch(pitch);
+		break;
+	    case 1:
+		if((Math.abs(x - getX()) + Math.abs(y - getY()) + Math.abs(z - getZ())) < 4)
+		    broadcastPacket(new SendEntityMovement(getId(),getX(),getY(),getZ(),x,y,z));
+		else
+		    broadcastPacket(new SendEntityTeleport(getId(),x,y,z,getRotation(),getPitch()));
+		setX(x);
+		setY(y);
+		setZ(z);
+		setStance(stance);
+		break;
+	    case 2:
+		if((Math.abs(x - getX()) + Math.abs(y - getY()) + Math.abs(z - getZ())) < 4)
+		    broadcastPacket(new SendEntityMovementAndLook(getId(),getX(),getY(),getZ(),getRotation(),getPitch(),x,y,z,rotation,pitch));
+		else
+		    broadcastPacket(new SendEntityTeleport(getId(),x,y,z,rotation,pitch));
+		setX(x);
+		setY(y);
+		setZ(z);
+		setStance(stance);
+		setRotation(rotation);
+		setPitch(pitch);
+		break;
+	}
+    }
+
+    private void broadcastPacket(BaseSendablePacket packet){
+
+	int chunkx = (((int) getX()) >> 6);
+	int chunky = (((int) getY()) >> 6);
+	for (int i = chunkx - 1; i <= chunky + 1; i++)
+	    for (int o = chunky - 1; o <= chunky + 1; o++)
+		World.getInstance().getChunkByChunkLoc(i, o).broadcastPacket(packet,this);
+    }
     public void onChat(String message) {
-	for(Player p : World.getInstance().getPlayers())
+	for (Player p : World.getInstance().getPlayers())
 	    p.sendPacket(new Chat("<" + _username + "> " + message));
+    }
+
+    public String getUsername() {
+	return _username;
     }
 }

@@ -21,7 +21,7 @@ public class RequestChangeLook extends BaseReceivablePacket{
 
     @Override
     public void runImpl() {
-	//TODO: implement.
+	getClient().getPlayer().onMove(0, 0, 0, 0, 0, _rotation, _pitch);
     }
 
 }

@@ -22,7 +22,7 @@ public class RequestChangePosition extends BaseReceivablePacket{
 
     @Override
     public void runImpl() {
-	//TODO: Implement.
+	getClient().getPlayer().onMove(1, _x, _y, _z, _stance, 0, 0);
     }
 
 }

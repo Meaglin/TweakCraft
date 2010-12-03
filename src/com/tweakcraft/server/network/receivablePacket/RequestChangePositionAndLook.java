@@ -26,7 +26,7 @@ public class RequestChangePositionAndLook extends BaseReceivablePacket {
 
     @Override
     public void runImpl() {
-	//TODO: Implement.
+	getClient().getPlayer().onMove(2, _x, _y, _z, _stance, _rotation, _pitch);
     }
 
 }

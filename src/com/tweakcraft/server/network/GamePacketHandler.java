@@ -28,7 +28,8 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 
 	int opcode = buf.get()& 0xFF;
 
-//	System.out.println("receive packet " + opcode);
+	if(opcode != 0 && opcode < 10)
+	    System.out.println("receive packet " + opcode);
 
 	switch (opcode) {
 	    case 0x00:
@@ -64,6 +65,9 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	    case 0x0D:
 		packet = new RequestChangePositionAndLook();
 		break;
+	    case 0xFF:
+		packet = new RequestDisconnect();
+		break;
 	    default:
 		System.out.println("Unknown packet with opcode : " + opcode);
 		break;
@@ -74,7 +78,7 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 
 
     public GameClient create(MMOConnection<GameClient> con) {
-	return new GameClient(con);
+	return  new GameClient(con);
     }
 
     public void execute(ReceivablePacket<GameClient> rp) {
@@ -86,29 +90,31 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 	buf.position(0);
 
 	int packetId = buf.get();
+	//if(packetId != 0)_log.info(packetId + " " + buf.remaining());
+	
+//	if(true)return bb.remaining();
 
-//	if(packetId != 0)
-//	    _log.info(packetId + " " + buf.remaining());
-
+	int packetSize = 0;
 	switch (packetId) {
 	    // Ping
 	    case 0x00:
-		return 0;
+		packetSize =  1;
+		break;
 	    // RequestLogin
 	    case 0x01:
 		int userlen = getShort(buf.get(5), buf.get(6));
 		int passlen = getShort(buf.get(7 + userlen), buf.get(8 + userlen));
                 
-		return 6 + userlen + 2 + passlen + 10;
+		packetSize =  6 + userlen + 2 + passlen + 10;
+		break;
 	    // HandShake
 	    case 0x02:
-		return 3 + getShort(buf.get(), buf.get());
+		packetSize =  3 + getShort(buf.get(), buf.get());
+		break;
 	    // Chat
 	    case 0x03:
-//		if(buf.remaining() < 3)
-//		    return 1;
-//		else
-		    return 3 + getShort(buf.get(1), buf.get(2));
+		    packetSize =  3 + getShort(buf.get(1), buf.get(2));
+		break;
 	    // Inventory
 	    case 0x05:
 		int type = buf.getInt();
@@ -138,47 +144,64 @@ public class GamePacketHandler implements IPacketHandler<GameClient>, IClientFac
 			    }
 			break;
 		}
-		return 7 + size;
+		packetSize =  7 + size;
+		break;
 	    // Request Use Entity ?
 	    case 0x07:
-		return 10;
+		packetSize =  10;
+		break;
 	    // Request Respawn.
 	    case 0x09:
-		return 2;
+		packetSize =  2;
+		break;
 	    //Player on ground
 	    case 0x0A:
-		return 2;
+		packetSize =  2;
+		break;
 	    //Player position
 	    case 0x0B:
-		return 34;
+		packetSize =  34;
+		break;
 	    //Player look
 	    case 0x0C:
-		return 10;
+		packetSize =  10;
+		break;
 	    //Player position+look
 	    case 0x0D:
-		return 42;
+		packetSize =  42;
+		break;
 	    //Player Digging / left clicking a block
 	    case 0x0E:
-		return 12;
+		packetSize =  12;
+		break;
 	    //Player Block Placement / right clicking a block.
 	    case 0x0F:
-		return 13;
+		packetSize =  13;
+		break;
 	    // Item Hold Change.
 	    case 0x10:
-		return 7;
+		packetSize =  7;
+		break;
 	    // Arm swing(left click into distance).
 	    case 0x12:
-		return 6;
+		packetSize =  6;
+		break;
 	    // Drop item.
 	    case 0x15:
-		return 23;
+		packetSize =  23;
+		break;
 	    //Disconnect.
 	    case 0xFF:
-		return 3 + getShort(buf.get(),buf.get());
+		packetSize =  3 + getShort(buf.get(),buf.get());
+		break;
 	    default:
-		return 0;
+		packetSize =  0;
+		break;
 
 	}
+//	if(packetId > 0)
+	    _log.info(packetId + " " + buf.remaining() + " " + packetSize);
+	return packetSize;
     }
 
     private static int getShort(byte b1,byte b2){

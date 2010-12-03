@@ -5,7 +5,9 @@ import com.tweakcraft.server.instance.Player;
 import com.tweakcraft.server.instancemanager.World;
 import com.tweakcraft.server.nbt.Nbt;
 import com.tweakcraft.server.nbt.Tag;
+import com.tweakcraft.server.network.BaseSendablePacket;
 import com.tweakcraft.server.network.sendablePacket.PreChunk;
+import com.tweakcraft.server.network.sendablePacket.SendCharInfo;
 import com.tweakcraft.server.network.sendablePacket.SendChunk;
 import com.tweakcraft.server.util.Rand;
 import java.util.Arrays;
@@ -29,7 +31,7 @@ public class Chunk {
     private final int[][] _lastAction;
     private final ScheduledFuture<?>[][] _cleanupTasks;
 
-    private FastMap<Integer, Player> _players;
+    private final FastMap<Integer, Player> _players;
     private boolean _disabled = false;
     protected static final Logger _log = Logger.getLogger(Chunk.class.getName());
 
@@ -204,7 +206,7 @@ public class Chunk {
 	    return;
 	}
 
-	_players.put(player.getId(), player);
+	
 
 	int startx = _x >> 4, starty = _y >> 4;
 	byte[] blocksO;
@@ -230,6 +232,11 @@ public class Chunk {
 	    }
 	deflater = null;
 	blocksO = null;
+	
+	for(Player p : _players.values())
+	    player.sendPacket(new SendCharInfo(p));
+
+	_players.put(player.getId(), player);
     }
 
     public synchronized void forget(Player player) {
@@ -254,6 +261,14 @@ public class Chunk {
 	}
     }
 
+    public void broadcastPacket(BaseSendablePacket packet, Player player) {
+	synchronized(_players){
+	    for(Player p : _players.values())
+		if(p.getId() != player.getId())
+		    p.sendPacket(packet);
+	}
+    }
+
     class ChunkCleanupTask implements Runnable{
 	public void run() {
 	    if(!_players.isEmpty()){
@@ -265,7 +280,7 @@ public class Chunk {
 	   for(int x = 0;x < 4;x++)
 		for(int y = 0;y < 4;y++)
 		    if(_lastAction[x][y] > currentTimeInSeconds()-200) {
-			_log.info("action not empty ?");
+			_log.info(currentTimeInSeconds() + " action not empty ? " + _lastAction[x][y]);
 			return;
 		    }
 
@@ -308,6 +323,6 @@ public class Chunk {
 	return (var >> 1);
     }
     private static int currentTimeInSeconds(){
-	return floorAndDivideBy2((int) (System.currentTimeMillis() / 500));
+	return (int) ((System.currentTimeMillis() / 500) >> 1);
     }
 }
