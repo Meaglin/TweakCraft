@@ -25,6 +25,7 @@ public class Player extends Character {
     private GameClient _client;
     private Inventory _craftTable, _armor, _inventory;
     private String _username;
+    private String _lastMessage;
     private ScheduledFuture<?> _keepAlive;
 
     public Player(GameClient client) {
@@ -207,8 +208,15 @@ public class Player extends Character {
 		World.getInstance().getChunkByChunkLoc(i, o).broadcastPacket(packet,this);
     }
     public void onChat(String message) {
+	_log.info("Player " + getUsername() + " sending message: " + message);
+
+	if(_lastMessage != null && _lastMessage.equals(message))
+	    return;
+
+	_lastMessage = message;
+
 	for (Player p : World.getInstance().getPlayers())
-	    p.sendPacket(new Chat("<" + _username + "> " + message));
+	    p.sendPacket(new Chat("<" + getUsername() + "> " + message));
     }
 
     public String getUsername() {

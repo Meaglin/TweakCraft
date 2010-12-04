@@ -40,8 +40,11 @@ public class World {
     }
     public void registerPlayer(Player player){
 	synchronized(_players){
-	    if(!_players.containsKey(player.getId()))
+	    if(!_players.containsKey(player.getId())){
 		_players.put(player.getId(),player);
+		System.out.println("Registering player " + player.getUsername());
+	    }
+
 	}
     }
     public void forgetPlayer(Player player){
